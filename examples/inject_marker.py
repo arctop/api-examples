@@ -42,7 +42,10 @@ def api_key() -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("event_type", help="required marker event type")
     parser.add_argument("--label", help="optional marker label")
     parser.add_argument("--timestamp", type=int,

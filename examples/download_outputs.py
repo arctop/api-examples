@@ -64,7 +64,10 @@ def newest_session_with_outputs(session: requests.Session) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("session_id", nargs="?",
                         help="session to download; omit for the newest "
                              "completed session that has outputs")

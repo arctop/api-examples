@@ -38,6 +38,7 @@ from websockets.sync.client import connect
 
 ORIGIN = os.environ.get("ARCTOP_ORIGIN", "https://hegemon42.arctop.com")
 TERMINAL_CODES = {4401, 4403}
+HEALTHY_SECONDS = 60
 
 
 def api_key() -> str:
@@ -82,20 +83,25 @@ def print_frame(frame: dict) -> None:
         print(f"{kind or '?'}  {json.dumps(frame)}")
 
 
-def listen_once(url: str, key: str) -> int | None:
-    """Read frames until the socket closes; return the close code."""
+def listen_once(url: str, key: str) -> tuple[int | None, float]:
+    """Read frames until the socket closes; return its code and uptime."""
     with connect(url, additional_headers={"Authorization": f"Bearer {key}"}) as ws:
         print(f"connected to {url}")
+        opened = time.monotonic()
         while True:
             try:
                 message = ws.recv()
             except ConnectionClosed as closed:
-                return closed.rcvd.code if closed.rcvd else None
+                code = closed.rcvd.code if closed.rcvd else None
+                return code, time.monotonic() - opened
             print_frame(json.loads(message))
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--user", action="append", default=[],
                         help="narrow the scope to this user id; repeatable")
     args = parser.parse_args()
@@ -105,7 +111,7 @@ def main() -> None:
     backoff = 1
     while True:
         try:
-            code = listen_once(url, key)
+            code, uptime = listen_once(url, key)
         except KeyboardInterrupt:
             return
         except InvalidStatus as err:
@@ -115,10 +121,10 @@ def main() -> None:
                 sys.exit(f"handshake refused with HTTP {status}; check the "
                          "key. Not retrying.")
             print(f"handshake refused with HTTP {status}", file=sys.stderr)
-            code = None
+            code, uptime = None, 0.0
         except OSError as err:
             print(f"connect failed: {err}", file=sys.stderr)
-            code = None
+            code, uptime = None, 0.0
 
         if code in TERMINAL_CODES:
             sys.exit(f"socket closed {code}; the key or its group no longer "
@@ -126,6 +132,10 @@ def main() -> None:
         if code == 1000:
             print("closed normally")
             return
+        if uptime >= HEALTHY_SECONDS:
+            # The socket was healthy; treat this as a fresh failure
+            # rather than the next step of an escalating retry.
+            backoff = 1
         delay = 1 if code == 4429 else backoff
         print(f"closed (code={code}); reconnecting in {delay}s", file=sys.stderr)
         time.sleep(delay)

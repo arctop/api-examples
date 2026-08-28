@@ -41,7 +41,10 @@ def fail(resp: requests.Response) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--status", choices=["active", "completed", "error"])
     parser.add_argument("--device", help="filter by EEG device type")
     parser.add_argument("--user", help="filter to one user id")

@@ -37,12 +37,14 @@ Each example is a single self-contained file with inline dependency metadata
 uv run examples/list_sessions.py
 ```
 
-Or with plain pip:
+Or with plain pip, on Python 3.10 or newer:
 
 ```bash
 pip install -r requirements.txt
 python examples/list_sessions.py
 ```
+
+Every script documents its own flags under `--help`.
 
 ## Examples
 

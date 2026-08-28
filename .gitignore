@@ -1,5 +1,21 @@
+# Python
 __pycache__/
 *.pyc
+*.egg-info/
+
+# Environments
 .venv/
+venv/
+.env
+
+# Tooling caches
+.ruff_cache/
+.pytest_cache/
+
+# Example output
 outputs/
+
+# Editors and OS
+.idea/
+.vscode/
 .DS_Store
